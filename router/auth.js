@@ -1,7 +1,6 @@
 const router = require("express").Router()
-const User = require('../schemas/user')
+const User = require('../schemas/professor')
 const bcrypt = require('bcrypt')
-
 
 
 //register |  api/register/register
@@ -12,9 +11,7 @@ router.post('/register', async (req, res) => {
     const user = await new User({
         username: req.body.username,
         email: req.body.email,
-        password: hashePass,
-        lecturersId: req.body.lecturersId,
-        img: req.body.img
+        password: hashePass
     })
     try {
         await user.save();
@@ -26,15 +23,11 @@ router.post('/register', async (req, res) => {
 })
 
 //LOGIN
-router.post("/login", async (req, res) => {
-    console.log(req.body);
-    console.log("asdasd111");
+router.post("/", async (req, res) => {
+    // console.log(req.body);
     try {
         //check user form the request 
-        const user = await User.findOne({ email: req.body.email })
-        console.log(req.body.email);
-        console.log("asdasd22");
-        console.log(user);
+        const user = await User.findOne({ username: req.body.username })
         if (!user) res.status(404).json("user not found")
 
         const validPassword = await bcrypt.compare(req.body.password, user.password)
