@@ -1,4 +1,4 @@
-const Course = require("../schemas/cours");
+const Course = require("../schemas/course");
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
 
@@ -8,7 +8,9 @@ router.post('/creatCourse', async (req, res) => {
     const cours = await new Course({
         CoursesName: req.body.CoursesName,
         Coursesid: req.body.Coursesid,
-        lecturersIds: req.body.lecturersIds,
+        ProfessorUserName: req.body.ProfessorUserName,
+        Year: req.body.Year,
+        Semester: req.body.Semester,
         studentAndGrade: req.body.studentAndGrade,
         courseDetails: req.body.courseDetails
     })
@@ -75,14 +77,7 @@ router.put("/updateGradeStudent", async (req, res) => {
         res.status(501).json(err)
     }
 });
-/*
- {
-                            //'studentAndGrade.$.id_stu': req.body.studentId,
-                            //'studentAndGrade.$.grade': req.body.gradeStudent,
-                            id_stu: req.body.studentId,
-                            grade: req.body.gradeStudent,
-                        },
-*/
+
 router.post("/deleteStudentAndGrade", async (req, res) => {
     if (!req.body.Coursesid || !req.body.lecturersId)
         return res.status(403).json("err");
@@ -202,19 +197,19 @@ router.get('/allDataCourses', async function (req, res) {
     }
 });
 
-router.get('/allCourses', async function (req, res) {
-    try {
-        Course.find({}, (err, data) => {
-            if (err) {
-                res.status(500).json(err)
-            } else {
-                res.status(200).json(data)
-            }
-        })
-    } catch (err) {
-        res.status(501).json(err)
-    }
-});
+// router.get('/allCourses', async function (req, res) {
+//     try {
+//         Course.find({}, (err, data) => {
+//             if (err) {
+//                 res.status(500).json(err)
+//             } else {
+//                 res.status(200).json(data)
+//             }
+//         })
+//     } catch (err) {
+//         res.status(501).json(err)
+//     }
+// });
 
 module.exports = router;
 

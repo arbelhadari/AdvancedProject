@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const CoursSchema = new mongoose.Schema(
+const CourseSchema = new mongoose.Schema(
     {
         CoursesName: {
             type: String,
@@ -36,14 +36,6 @@ const CoursSchema = new mongoose.Schema(
                   message: props => `${props.value} is not a valid year. The year format should be YYYY.`
             }
         },
-        StudentList: {
-            type: [{type: Number}],
-            validate: {
-                validator: function(arr) {
-                    return arr.every((num => (num >= 100000000) && (num <= 999999999)))
-                }
-            }
-        },
         GradesSheet: {
             type: Map,
             of: Number,
@@ -52,10 +44,11 @@ const CoursSchema = new mongoose.Schema(
                 {
                   validator: function(v) {
                     for (const [student_id, grade] of v.entries()) {
-                      if (typeof student_id !== 'number' || student_id < 100000000 || student_id > 999999999) {
+                      if (typeof student_id !== Number || student_id < 100000000 || student_id > 999999999) {
                         return false;
                       }
-                      if (typeof grade !== 'number' || grade < 0 || grade > 100) {
+                      if (!grade) return true;
+                      if (typeof grade !== Number && grade < 0 || grade > 100) {
                         return false;
                       }
                     }
@@ -95,4 +88,4 @@ const CoursSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-module.exports = mongoose.model("Course", CoursSchema);
+module.exports = mongoose.model("Course", CourseSchema);
