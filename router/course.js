@@ -2,6 +2,7 @@ const Course = require("../schemas/course");
 const Student = require('../schemas/student');
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
+const studentRouter = require('./student');
 
 
 router.post('/MyCourses/creatCourse', async (req, res) => {
@@ -46,87 +47,100 @@ router.post("/Course/addStudent", async (req, res) => {
     try {
         Course.find({ Coursesid: req.body.Coursesid }, async (course_err, course) => {
             if (!course_err) {
-                Student.find({studentId: req.body.studentId}), async (student_err, student) => {
+                Student.find({studentId: req.body.studentId}, async (student_err, student) => {
                     if (student_err) {
-                        const new_student = new Student({
-                            StudentId: req.body.StudentId,
-                            StudentDOB: req.body.StudentDOB,
-                            Gender: req.body.Gender
-                        })
-                        try {
-                            await new_student.save();
-                            res.status(200).json(new_student)
-                        } catch (err) {
-                            console.log(err);
-                            res.status(500).json(err)
-                        }
-                        course[0].GradesSheet.set(req.body.StudentId, req.body.Grade)
-                        try {
-                            await course[0].save();
-                            res.status(200).json(course[0]);
-                        } catch (err) {
-                            console.log(err);
-                            res.status(500).json(err);
-                        }
+                        studentRouter.addStudent(req.body);
                     }
                     else {
                         if (course[0].GradesSheet.has(student[0].StudentId)) {
                             res.status(400).send({ error: "Sdudent ID already exists in this course."})
                         }
-                        else {
-                            course[0].GradesSheet.set(req.body.StudentId, req.body.Grade)
-                            try {
-                                await course[0].save();
-                                res.status(200).json(course[0]);
-                            } catch (err) {
-                                console.log(err);
-                                res.status(500).json(err);
-                            }
+                        else
+                        {
+                            studentRouter.incrementCourseCount(student.StudentId);
                         }
                     }
-                }
+                    course[0].GradesSheet.set(req.body.StudentId, req.body.Grade)
+                    try {
+                        await course[0].save();
+                        res.status(200).json(course[0]);
+                    } catch (err) {
+                        console.log(err);
+                        res.status(500).json(err);
+                    }
+
+                });
             }
             else {
                 res.status(500).json(err)
             }
-        })
+        });
     } catch (err) {
         res.status(501).json(err)
     }
 });
 
+
+router.post("/Course/deleteStudent", async (req, res) => {  
+    if (!req.body.Coursesid || !req.body.ProfessorUserName)
+    return res.status(403).json("Missing courseid or username."); 
+
+try {
+    Course.find({ Coursesid: req.body.Coursesid }, async (course_err, course) => {
+        if (!course_err) {
+            Student.find({studentId: req.body.studentId}, async (student_err, student) => {
+                if (student_err) {
+                    return res.status(400).send({ error: "Sdudent ID does not exists in this course."})
+                }
+                else {
+                    if (course[0].GradesSheet.has(student[0].StudentId)) {
+                        studentRouter.decrementCourseCount(req.body.StudentId);
+                    }
+                    else
+                    {
+                        return res.status(400).send({ error: "Sdudent ID already exists in this course."})
+                    }
+                }
+                course[0].GradesSheet.unset(req.body.StudentId)
+                try {
+                    await course[0].save();
+                    res.status(200).json(course[0]);
+                } catch (err) {
+                    console.log(err);
+                    res.status(500).json(err);
+                }
+
+            });
+        }
+        else {
+            res.status(500).json(err)
+        }
+    });
+} catch (err) {
+    res.status(501).json(err)
+}
+});
+
+
 router.put("/Course/updateStudent", async (req, res) => {
     if (!req.body.Coursesid || !req.body.lecturersId)
         return res.status(403).json("err");
     try {
-        Course.find({ Coursesid: req.body.Coursesid }, async (err, data) => {
-            console.log("1");
-            if (err) res.status(500).json(err)
+        Course.find({ Coursesid: req.body.Coursesid }, async (err, course) => {
+            if (err) return res.status(500).json(err)
             else {
-                console.log("2");
-                let flag = false
-                let lecturersIds_ = data[0].lecturersIds;
-                lecturersIds_.forEach(element => {
-                    if (req.body.lecturersId == element)
-                        flag = true;
-                });
-                if (flag) {
-                    console.log("3");
-                    Course.findOneAndUpdate(
-                        { Coursesid: req.body.Coursesid },
-                        { $set: { "studentAndGrade.$[el].id_stu": req.body.studentId } },
-                        {
-                            arrayFilters: [{ "el.grade": req.body.gradeStudent }],
-                            new: true
-                        }
-                        ,
-                        (err, data) => {
-                            console.log(data);
-                            if (err) res.status(500).json(err)
-                            else res.status(200).json(data)
-                        })
-                } else {
-                    res.status(500).json(err)
+                if (course[0].GradesSheet.has(req.body.StudentId)){
+                    course[0].GradesSheet.set(req.body.StudentId, req.body.newGrade);
+                    try {
+                        await course[0].save();
+                        res.status(200).json(course[0]);
+                    } catch (err) {
+                        console.log(err);
+                        res.status(500).json(err);
+                    }
+                }
+                else{
+                    return res.status(403).json("student id doesnt exist in the course");
                 }
             }
         })
