@@ -1,3 +1,6 @@
+// TODO:
+
+const Professor = require('../schemas/professor')
 const Course = require("../schemas/course");
 const Student = require('../schemas/student');
 const router = require("express").Router();
@@ -5,18 +8,28 @@ const bcrypt = require("bcrypt");
 const studentRouter = require('./student');
 
 
-router.post('/MyCourses/creatCourse', async (req, res) => {
+router.post('/MyCourses/createCourse', async (req, res) => {
 
     const course = await new Course({
         CoursesName: req.body.CoursesName,
         Coursesid: req.body.Coursesid,
-        ProfessorUserName: req.body.ProfessorUserName,
         Year: req.body.Year,
         Semester: req.body.Semester,
-        courseDetails: req.body.courseDetails
+        courseDetails: req.body.courseDetails,
+        ProfessorUserName: req.body.ProfessorUserName
+
     })
+
+    let prof = await Professor.findOne({username: req.body.ProfessorUserName})
+    prof.courseIdList.push(req.body.Coursesid)
+    await prof.save()
+    // Professor.findOne( {username: req.body.ProfessorUserName} ), async (prof_err, prof) => {
+    //     prof.courseIdList.push(req.body.Coursesid);
+    //     await prof.save();
+    // }
     try {
         await course.save();
+        
         res.status(200).json(course)
     } catch (err) {
         console.log(err);
@@ -26,18 +39,18 @@ router.post('/MyCourses/creatCourse', async (req, res) => {
 
 router.delete("/MyCourses/deleteCourse", async (req, res) => {
     try {
-        Course.findOneAndDelete({ Coursesid: req.body.Coursesid }, async (err, data) => {
-            if (err) {
-                res.status(500).json(err)
-                console.log(err);
-            } else {
-                res.status(200).json(data)
-            }
-        })
+        const data = await Course.findOneAndDelete({ Coursesid: req.body.Coursesid });
+        let prof = await Professor.findOne({username: req.body.ProfessorUserName})
+        await prof.updateOne(
+            { $pull: { courseIdList: req.body.Coursesid } } 
+        )
+        res.status(200).json(data);
     } catch (err) {
+        console.log(err);
         res.status(500).json(err);
     }
 });
+
 
 router.post("/Course/addStudent", async (req, res) => {
 
@@ -53,7 +66,7 @@ router.post("/Course/addStudent", async (req, res) => {
                     }
                     else {
                         if (course[0].GradesSheet.has(student[0].StudentId)) {
-                            res.status(400).send({ error: "Sdudent ID already exists in this course."})
+                            res.status(400).send({ error: "Student ID already exists in this course."})
                         }
                         else
                         {

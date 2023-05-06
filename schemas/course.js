@@ -1,3 +1,6 @@
+// TODO:
+// check course id (mongo auto generated?)
+
 const mongoose = require("mongoose");
 
 const CourseSchema = new mongoose.Schema(
@@ -15,12 +18,16 @@ const CourseSchema = new mongoose.Schema(
             min: 1,
             unique: true,
         },
-        ProfessorUserName: [{
+        // user: {
+        //   type: mongoose.Schema.Types.ObjectId,
+        //   ref: 'user'
+        // },
+        ProfessorUserName: {
             type: String,
             require: true,
             min: 3,
             max: 20,
-        }],
+        },
         Semester: {
             type: String,
             require: true,
