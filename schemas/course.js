@@ -1,3 +1,6 @@
+// TODO:
+// check course id (mongo auto generated?)
+
 const mongoose = require("mongoose");
 
 const CourseSchema = new mongoose.Schema(

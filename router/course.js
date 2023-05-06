@@ -1,3 +1,6 @@
+// TODO:
+
+
 const Course = require("../schemas/course");
 const Student = require('../schemas/student');
 const router = require("express").Router();
@@ -53,7 +56,7 @@ router.post("/Course/addStudent", async (req, res) => {
                     }
                     else {
                         if (course[0].GradesSheet.has(student[0].StudentId)) {
-                            res.status(400).send({ error: "Sdudent ID already exists in this course."})
+                            res.status(400).send({ error: "Student ID already exists in this course."})
                         }
                         else
                         {

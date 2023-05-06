@@ -1,37 +1,21 @@
-const cors = require("cors");
-
-const morgan = require("morgan");
-const express = require("express");
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-
-const userRoute = require("./router/user");
-const loginRoute = require("./router/login");
-const coursesRoute = require("./router/cours");
-
-const port = "5555";
-dotenv.config();
-
-mongoose.connect(
-    process.env.MONGO,
-    { useNewUrlParser: true, useUnifiedTopology: true },
-);
+const express = require('express');
+const connectDB = require('./config/db');
 
 const app = express()
-app.use(morgan("common"));
-app.use(express.json());
-app.use(cors());
 
+// connect database
+connectDB();
 
-//app.use("/users", userRoute); טיפול בבעית רוטר
-app.use("/login", loginRoute);
-app.use("/course", coursesRoute);
+//init middleware
+app.use(express.json({ extended: false }));
 
-app.get('/', (req, res) => {
-    console.log("welcome!");
-    res.send("welcome")
-})
+app.get('/', (req, res) => res.send('API Running'));
 
-app.listen(port, () => {
-    console.log("listen to : " + port);
-})
+// define routes
+app.use('/course', require('./router/course'));
+app.use('/auth', require('./router/auth'));
+app.use('/professor', require('./router/professor'));
+app.use('/student', require('./router/student'));
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log('Server started on port 5000'));
