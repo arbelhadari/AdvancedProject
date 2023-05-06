@@ -21,14 +21,17 @@ const ProfessorSchema = new mongoose.Schema(
             min: 5,
         },
         courseIdList: {
-            type: [{type: Number}],
-            validate: {
-                validator: function(arr) {
-                  return arr.length >= 0 && arr.every(num => num >= 1);
-                },
-                message: 'Each course ID must be greater than or equal to 1.'
-            }
+            type: [Number]
         }
+        // courseIdList: {
+        //     type: [{type: Number}],
+            // validate: {
+            //     validator: function(arr) {
+            //       return arr.length >= 0 && arr.every(num => num >= 1);
+            //     },
+            //     message: 'Each course ID must be greater than or equal to 1.'
+            // }
+        // }
         // img: {
         //     type: String,
         //     require: true,
