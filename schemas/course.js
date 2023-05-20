@@ -47,23 +47,28 @@ const CourseSchema = new mongoose.Schema(
             type: Map,
             of: Number,
             require: false,
-            validate: [
-                {
-                  validator: function(v) {
-                    for (const [student_id, grade] of v.entries()) {
-                      if (typeof student_id !== Number || student_id < 100000000 || student_id > 999999999) {
-                        return false;
-                      }
-                      if (!grade) return true;
-                      if (typeof grade !== Number && grade < 0 || grade > 100) {
-                        return false;
-                      }
-                    }
-                    return true;
-                  },
-                  message: 'Invalid key-value pair for myMap. The key must be a number between 0 and 100, and the value must be a number between 0 and 100.'
-                }
-              ]
+            default: new Map()
+            // validate: [{
+            //   validator: function(value) {
+            //     // Validate the string key
+            //     if (typeof value !== 'string' || !/^\d{9}$/.test(value)) {
+            //       return false;
+            //     }
+        
+            //     return true;
+            //   },
+            //   message: 'Invalid string key',
+            // }, {
+            //   validator: function(value) {
+            //     // Validate the number value
+            //     if (typeof value !== 'number' || value < 0 || value > 100) {
+            //       return false;
+            //     }
+        
+            //     return true;
+            //   },
+            //   message: 'Invalid number value',
+            // }],
         },
         // studentAndGrade: [{
         //     nameStudent: {
