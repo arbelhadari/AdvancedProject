@@ -1,35 +1,27 @@
-const student = require('../schemas/student');
 const Student = require('../schemas/student');
-const router = require("express").Router();
+// const router = require("express").Router();
 
 
-function addStudent(StudentData){
+async function addStudent(StudentData){
+    console.log("5")
     const student = new Student({
         StudentId: StudentData.StudentId,
         StudentDOB: StudentData.StudentDOB,
-        Gender: StudentData.Gender,
-        CourseCount: 1
+        Gender: StudentData.Gender
+        // CourseCount: 1
     })
     try {
         student.save();
-        res.status(200).json(student)
     } catch (err) {
         console.log(err);
-        res.status(500).json(err)
     }
 }
-function deleteStudent(StudentData){
-    try {
-        Student.findOneAndDelete({ StudentId: StudentData.StudentId }, async (err, data) => {
-            if (err) {
-                res.status(500).json(err)
-                console.log(err);
-            } else {
-                res.status(200).json(data)
-            }
-        })
-    } catch (err) {
-        res.status(500).json(err);
+
+async function deleteStudent(StudentData){
+    try{
+        await Student.findOneAndDelete({StudentId: StudentData.StudentId});
+    } catch (err){
+        console.log(err);
     }
 }
 
@@ -49,9 +41,10 @@ async function getStudent(studentId)
 
 async function incrementCourseCount(studentId)
 {
+    console.log("increment")
     try
     {
-        const student = await Student.findOneAndUpdate({StudentId: studentId},{$inc: {CourseCount:1}}, {new:true} );
+        const student = await Student.findOneAndUpdate({StudentId: studentId}, {$inc: {CourseCount: 1}}, {new:true});
         return student
     }
     catch (err)
@@ -73,10 +66,9 @@ async function decrementCourseCount(studentId)
     catch (err)
     {
         return -1;
-
     }
 }
 
 
 
-module.exports = router;
+module.exports = {addStudent, deleteStudent, incrementCourseCount, decrementCourseCount};

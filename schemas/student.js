@@ -28,6 +28,10 @@ const StudentSchema = new mongoose.Schema({
         type: String,
         require: true,
         enum: ['M', 'F']
+    },
+    CourseCount: {
+      type: Number,
+      default: 1
     }
 },
     { timestamps: true }

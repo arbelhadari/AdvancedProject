@@ -5,7 +5,7 @@ const Course = require("../schemas/course");
 const Student = require('../schemas/student');
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
-const studentRouter = require('./student');
+const {addStudent, deleteStudent, incrementCourseCount, decrementCourseCount} = require('./student');
 
 
 router.post('/MyCourses/createCourse', async (req, res) => {
@@ -17,7 +17,6 @@ router.post('/MyCourses/createCourse', async (req, res) => {
         Semester: req.body.Semester,
         courseDetails: req.body.courseDetails,
         ProfessorUserName: req.body.ProfessorUserName
-
     })
 
     let prof = await Professor.findOne({username: req.body.ProfessorUserName})
@@ -51,70 +50,91 @@ router.delete("/MyCourses/deleteCourse", async (req, res) => {
     }
 });
 
-
 router.post("/Course/addStudent", async (req, res) => {
-
-    if (!req.body.Coursesid || !req.body.ProfessorUserName)
-        return res.status(403).json("Missing courseid or username."); 
+    if (!req.body.Coursesid)
+        return res.status(403).json("Missing courseid."); 
 
     try {
-        Course.find({ Coursesid: req.body.Coursesid }, async (course_err, course) => {
-            if (!course_err) {
-                Student.find({studentId: req.body.studentId}, async (student_err, student) => {
-                    if (student_err) {
-                        studentRouter.addStudent(req.body);
-                    }
-                    else {
-                        if (course[0].GradesSheet.has(student[0].StudentId)) {
-                            res.status(400).send({ error: "Student ID already exists in this course."})
-                        }
-                        else
-                        {
-                            studentRouter.incrementCourseCount(student.StudentId);
-                        }
-                    }
-                    course[0].GradesSheet.set(req.body.StudentId, req.body.Grade)
-                    try {
-                        await course[0].save();
-                        res.status(200).json(course[0]);
-                    } catch (err) {
-                        console.log(err);
-                        res.status(500).json(err);
-                    }
-
-                });
+        let course = await Course.find({ Coursesid: req.body.Coursesid });
+        if (course) {
+            let student = await Student.find({StudentId: req.body.StudentId});
+            if (student.length === 0) {
+                console.log("4")
+                await addStudent(req.body);
             }
             else {
+                if (course[0].GradesSheet.has(req.body.StudentId)) {
+                    console.log("8")
+                    return res.status(400).send({ error: "Student ID already exists in this course."})
+                }
+                else
+                {
+                    console.log("9")
+                    incrementCourseCount(student[0].StudentId);
+                }
+            }
+            console.log("6");
+            await course[0].GradesSheet.set(req.body.StudentId, req.body.Grade);
+            console.log("7");
+            try {
+                await course[0].save();
+                res.status(200).json(course[0]);
+            } catch (err) {
+                console.log(err);
+                res.status(500).json(err);
+            }
+        } else {
                 res.status(500).json(err)
             }
-        });
     } catch (err) {
         res.status(501).json(err)
     }
-});
+});       
 
-
-router.post("/Course/deleteStudent", async (req, res) => {  
-    if (!req.body.Coursesid || !req.body.ProfessorUserName)
-    return res.status(403).json("Missing courseid or username."); 
+router.put("/Course/deleteStudent", async (req, res) => {  
+    if (!req.body.Coursesid)
+    return res.status(403).json("Missing courseid."); 
 
 try {
-    Course.find({ Coursesid: req.body.Coursesid }, async (course_err, course) => {
-        if (!course_err) {
-            Student.find({studentId: req.body.studentId}, async (student_err, student) => {
-                if (student_err) {
-                    return res.status(400).send({ error: "Sdudent ID does not exists in this course."})
-                }
-                else {
-                    if (course[0].GradesSheet.has(student[0].StudentId)) {
-                        studentRouter.decrementCourseCount(req.body.StudentId);
-                    }
-                    else
-                    {
-                        return res.status(400).send({ error: "Sdudent ID already exists in this course."})
-                    }
-                }
-                course[0].GradesSheet.unset(req.body.StudentId)
+    let course = await Course.find({ Coursesid: req.body.Coursesid });
+    if (course) {
+        let student = await Student.find({StudentId: req.body.StudentId});
+        if (!student) {
+            console.log("1")
+            return res.status(400).send({ error: "Student ID doesn't exists in this course."});
+        } else {
+            if (course[0].GradesSheet.has(req.body.StudentId)) 
+                decrementCourseCount(req.body.StudentId);
+            else
+                return res.status(400).send({ error: "Student ID doesn't exists in this course."});
+        }
+        course[0].GradesSheet.delete(req.body.StudentId); 
+        console.log(course[0].GradesSheet);
+        try {
+            await course[0].save();
+            res.status(200).json(course[0]);
+        } catch (err) {
+            console.log(err);
+            res.status(500).json(err);
+        }
+        // await course[0].GradesSheet.unset(req.body.StudentId); 
+    } else {
+        res.status(500).json(err);
+    }
+} catch (err) {
+    console.log(err)
+    res.status(501).json(err)
+}
+});
+
+router.put("/Course/updateStudent", async (req, res) => {
+    if (!req.body.Coursesid)
+        return res.status(403).json("err");
+    try {
+        let course = await Course.find({Coursesid: req.body.Coursesid});
+        if (course){
+            if (course[0].GradesSheet.has(req.body.StudentId)){
+                course[0].GradesSheet.set(req.body.StudentId, req.body.newGrade);
                 try {
                     await course[0].save();
                     res.status(200).json(course[0]);
@@ -122,149 +142,38 @@ try {
                     console.log(err);
                     res.status(500).json(err);
                 }
-
-            });
+            }
+        } else {
+            return res.status(500).json(err);
         }
-        else {
-            res.status(500).json(err)
-        }
-    });
-} catch (err) {
-    res.status(501).json(err)
-}
-});
-
-
-router.put("/Course/updateStudent", async (req, res) => {
-    if (!req.body.Coursesid || !req.body.lecturersId)
-        return res.status(403).json("err");
-    try {
-        Course.find({ Coursesid: req.body.Coursesid }, async (err, course) => {
-            if (err) return res.status(500).json(err)
-            else {
-                if (course[0].GradesSheet.has(req.body.StudentId)){
-                    course[0].GradesSheet.set(req.body.StudentId, req.body.newGrade);
-                    try {
-                        await course[0].save();
-                        res.status(200).json(course[0]);
-                    } catch (err) {
-                        console.log(err);
-                        res.status(500).json(err);
-                    }
-                }
-                else{
-                    return res.status(403).json("student id doesnt exist in the course");
-                }
-            }
-        })
-    } catch (err) {
-        res.status(501).json(err)
+    }
+    catch (err) {
+        res.status(501).json(err);
     }
 });
 
-router.post("/deleteStudentAndGrade", async (req, res) => {
-    if (!req.body.Coursesid || !req.body.lecturersId)
-        return res.status(403).json("err");
-
+router.get("/MyCourses/getAllCourses", async (req, res) => {
     try {
-        Course.find({ Coursesid: req.body.Coursesid }, async (err, data) => {
-            if (err) res.status(500).json(err)
-            else {
-                let flag = false
-                let lecturersIds_ = data[0].lecturersIds;
-                lecturersIds_.forEach(element => {
-                    if (req.body.lecturersId == element)
-                        flag = true;
-                });
-                if (flag) {
-                    Course.findOneAndUpdate(
-                        { Coursesid: req.body.Coursesid }
-                        , { $pull: { studentAndGrade: req.body.studentAndGrade } }, (err, data) => {
-                            if (err) res.status(500).json(err)
-                            else res.status(200).json(data)
-                        })
-                } else {
-                    res.status(500).json(err)
-                }
-            }
-        })
-    } catch (err) {
-        res.status(501).json(err)
+        const courses = await Course.find().sort({Year: -1});
+        res.json(courses)
+    }
+    catch(err){
+        console.error(err.message);
+        res.status(500).send(SERVER_ERROR)
     }
 });
 
-
-
-router.post("/getCourse", async (req, res) => {
-    if ((!req.body.lecturersId || !req.body.Coursesid))
-        return res.status(403).json("err");
-    try {
-        Course.find({ Coursesid: req.body.Coursesid }, async (err, data) => {
-            if (err) {
-                res.status(500).json(err)
-            }
-            else {
-                res.status(200).json(data)
-            }
-        })
-    } catch (err) {
-        res.status(501).json(err)
+router.get("/Course/getCourse", async (req, res) => {
+    try{
+        const course = await Course.find({Coursesid: req.body.Coursesid});
+        res.json(course)
     }
-});
-
-router.post('/allUserCourses', async function (req, res) {
-    try {
-        Course.find({}, (err, data) => {
-            if (err) {
-                res.status(500).json(err)
-            } else {
-                let allData = [];
-                data.forEach(element => {
-                    if (element.lecturersIds.includes(req.body.lecturersId))
-                        allData.push(element);
-                });
-                res.status(200).json(allData)
-            }
-        })
-    } catch (err) {
-        res.status(501).json(err)
+    catch(err){
+        console.error(err.message);
+        res.status(500).send(SERVER_ERROR)
     }
+    
 });
-
-router.get('/allDataCourses', async function (req, res) {
-    try {
-        Course.find({}, (err, data) => {
-            if (err) {
-                res.status(500).json(err)
-            } else {
-                let allData = [], sum = 0;
-                data.forEach(element => {
-                    sum++;
-                    let info = { name: element.CoursesName, Coursesid: element.Coursesid }
-                    allData.push(info);
-                });
-                let allInfo = { namesAndIds: [...allData], numberOfStudent: sum }
-                res.status(200).json(allInfo)
-            }
-        })
-    } catch (err) {
-        res.status(501).json(err)
-    }
-});
-
-// router.get('/allCourses', async function (req, res) {
-//     try {
-//         Course.find({}, (err, data) => {
-//             if (err) {
-//                 res.status(500).json(err)
-//             } else {
-//                 res.status(200).json(data)
-//             }
-//         })
-//     } catch (err) {
-//         res.status(501).json(err)
-//     }
-// });
 
 module.exports = router;
 

@@ -15,7 +15,7 @@ app.get('/', (req, res) => res.send('API Running'));
 app.use('/course', require('./router/course'));
 app.use('/auth', require('./router/auth'));
 app.use('/professor', require('./router/professor'));
-app.use('/student', require('./router/student'));
+// app.use('/student', require('./router/student'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log('Server started on port 5000'));
